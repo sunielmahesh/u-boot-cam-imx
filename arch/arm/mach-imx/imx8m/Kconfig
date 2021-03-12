@@ -82,6 +82,12 @@ config TARGET_IMX8MM_EVK
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
+config TARGET_IMX8MM_CTOUCH
+        bool "imx8mm LPDDR4 CTOUCH board"
+        select IMX8MM
+        select SUPPORT_SPL
+        select IMX8M_LPDDR4
+
 config TARGET_IMX8MM_EVK_QCA
 	bool "imx8mm LPDDR4 EVK Legacy QCA WIFI board"
 	select IMX8MM
@@ -160,6 +166,7 @@ source "board/freescale/imx8mq_evk/Kconfig"
 source "board/freescale/imx8mq_val/Kconfig"
 source "board/freescale/imx8mm_ab2/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
+source "board/freescale/imx8mm_ctouch/Kconfig"
 source "board/freescale/imx8mm_val/Kconfig"
 source "board/freescale/imx8mn_evk/Kconfig"
 source "board/freescale/imx8mp_evk/Kconfig"
