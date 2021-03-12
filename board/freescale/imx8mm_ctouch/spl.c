@@ -31,18 +31,13 @@ DECLARE_GLOBAL_DATA_PTR;
 int spl_board_boot_device(enum boot_device boot_dev_spl)
 {
 	switch (boot_dev_spl) {
+	case SD1_BOOT:
 	case SD2_BOOT:
 	case MMC2_BOOT:
 		return BOOT_DEVICE_MMC1;
 	case SD3_BOOT:
 	case MMC3_BOOT:
 		return BOOT_DEVICE_MMC2;
-	case QSPI_BOOT:
-		return BOOT_DEVICE_NOR;
-	case NAND_BOOT:
-		return BOOT_DEVICE_NAND;
-	case USB_BOOT:
-		return BOOT_DEVICE_BOARD;
 	default:
 		return BOOT_DEVICE_NONE;
 	}
@@ -68,8 +63,7 @@ struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
-#define USDHC2_CD_GPIO	IMX_GPIO_NR(2, 18)
-#define USDHC2_PWR_GPIO IMX_GPIO_NR(2, 19)
+#define USDHC2_CD_GPIO	IMX_GPIO_NR(1, 6)
 
 #define USDHC_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE |PAD_CTL_PE | \
 			 PAD_CTL_FSEL2)
@@ -98,6 +92,16 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
 	IMX8MM_PAD_SD2_RESET_B_GPIO2_IO19 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
 };
 
+static iomux_v3_cfg_t const usdhc1_pads[] = {
+	IMX8MM_PAD_SD1_CLK_USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+        IMX8MM_PAD_SD1_CMD_USDHC1_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+        IMX8MM_PAD_SD1_DATA0_USDHC1_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+        IMX8MM_PAD_SD1_DATA1_USDHC1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+        IMX8MM_PAD_SD1_DATA2_USDHC1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+        IMX8MM_PAD_SD1_DATA3_USDHC1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+        IMX8MM_PAD_SD1_RESET_B_GPIO2_IO10 | MUX_PAD_CTRL(USDHC_GPIO_PAD_CTRL),
+};
+
 /*
  * The evk board uses DAT3 to detect CD card plugin,
  * in u-boot we mux the pin to GPIO when doing board_mmc_getcd.
@@ -111,8 +115,8 @@ static iomux_v3_cfg_t const usdhc2_dat3_pad =
 
 
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
+	{USDHC1_BASE_ADDR, 0, 0},
 	{USDHC2_BASE_ADDR, 0, 4},
-	{USDHC3_BASE_ADDR, 0, 8},
 };
 
 int board_mmc_init(bd_t *bis)
@@ -128,13 +132,13 @@ int board_mmc_init(bd_t *bis)
 		switch (i) {
 		case 0:
 			init_clk_usdhc(1);
-			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
 			imx_iomux_v3_setup_multiple_pads(
-				usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
-			gpio_request(USDHC2_PWR_GPIO, "usdhc2_reset");
-			gpio_direction_output(USDHC2_PWR_GPIO, 0);
+				usdhc2_pads, ARRAY_SIZE(usdhc1_pads));
+//			gpio_request(USDHC2_PWR_GPIO, "usdhc2_reset");
+//			gpio_direction_output(USDHC2_PWR_GPIO, 0);
 			udelay(500);
-			gpio_direction_output(USDHC2_PWR_GPIO, 1);
+//			gpio_direction_output(USDHC2_PWR_GPIO, 1);
 			break;
 		case 1:
 			init_clk_usdhc(2);
@@ -162,7 +166,7 @@ int board_mmc_getcd(struct mmc *mmc)
 	int ret = 0;
 
 	switch (cfg->esdhc_base) {
-	case USDHC3_BASE_ADDR:
+	case USDHC1_BASE_ADDR:
 		ret = 1;
 		break;
 	case USDHC2_BASE_ADDR:
@@ -261,13 +265,6 @@ int power_init_board(void)
 
 void spl_board_init(void)
 {
-#ifndef CONFIG_SPL_USB_SDP_SUPPORT
-	/* Serial download mode */
-	if (is_usb_boot()) {
-		puts("Back to ROM, SDP\n");
-		restore_boot_params();
-	}
-#endif
 	puts("Normal Boot\n");
 }
 
